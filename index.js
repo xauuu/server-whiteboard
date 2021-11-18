@@ -21,6 +21,7 @@ const socketroom = {};
 const socketuser = {};
 const userList = {};
 
+
 io.on("connection", (socket) => {
   socket.on("join_room", (roomid, username) => {
     socket.join(roomid);
@@ -50,17 +51,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    const name = socketuser[socket.id];
     if (!socketroom[socket.id]) return;
-    socket.to(socketroom[socket.id]).emit("message", `${socketuser[socket.id]} đã rời khỏi phòng`, moment().format("h:mm a")
+    socket.to(socketroom[socket.id]).emit("message", `${name} đã rời khỏi phòng`, moment().format("h:mm a")
     );
+
     const index = rooms[socketroom[socket.id]].indexOf(socket.id);
-    io.to(socketroom[socket.id]).emit(
-      "user count",
-      rooms[socketroom[socket.id]].length
-    );
     rooms[socketroom[socket.id]].splice(index, 1);
+
+    const idn = userList[socketroom[socket.id]].indexOf(name);
+    userList[socketroom[socket.id]].splice(idn, 1);
+
+    io.to(socketroom[socket.id]).emit("user_list", userList[socketroom[socket.id]]);
+    
     delete socketroom[socket.id];
   });
 });
 
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+
